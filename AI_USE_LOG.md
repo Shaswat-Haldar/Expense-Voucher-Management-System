@@ -27,6 +27,7 @@ In accordance with academic and technical assessment integrity guidelines, this 
 |---|---|---|
 | **Claude 3.5 Sonnet** | Anthropic | Architecture planning, state machine logic, frontend component drafting, complex debugging |
 | **Gemini 1.5 Pro / Flash** | Google DeepMind | PostgreSQL schema design, Zod validation schemas, API route design, SQL aggregation |
+| **Gemini 2.0 Flash Lite** | Google DeepMind | Smart expense description generator, corporate justification prompt engineering |
 | **GPT-4o** | OpenAI | Filter logic, role-based dashboard metrics, error diagnosis |
 | **GitHub Copilot / IDE Assistant** | GitHub / DeepMind | Context-aware code completions, boilerplate generation, unit test scaffolding |
 
@@ -54,6 +55,8 @@ The following chronological log records each distinct technical task where AI to
 | **2026-09-04** | Bug Fix: Safe Array Unwrapping for Vouchers List | GitHub Copilot | Fix runtime exception `Cannot read properties of undefined (reading 'map')` when backend returns wrapped `{ success, data: [] }`. | Suggested safe unwrapping pattern: `const list = Array.isArray(res.data?.data) ? res.data.data : []`. | Applied defensive array handling across `MyVouchers.jsx`, `AllVouchers.jsx`, and `PendingApprovals.jsx`. |
 | **2026-09-04** | UI Enhancement: Infinite Canvas Background Animation | Gemini 1.5 Pro / Claude 3.5 Sonnet | Create a smooth, futuristic interactive canvas grid background (`InfiniteGrid.jsx`) for login and dashboard layouts with mouse parallax. | Standalone HTML5 Canvas React component `InfiniteGrid.jsx` utilizing `requestAnimationFrame` and pointer coordinates. | Integrated into `Layout.jsx` and `LoginPage.jsx`, tuned grid opacity, color hues for light/dark themes, and ensured zero CPU hogging when unmounted. |
 | **2026-09-04** | Security Hardening: `.env.example` Pattern Enforcement | Claude 3.5 Sonnet / Antigravity | Audit repository for credential exposure risks, configure strict `.gitignore` rules for environment files, generate `.env.example` templates, and update setup docs. | Template files (`.env.example`, `backend/.env.example`, `frontend/.env.example`) and revised README instructions (`copy .env.example â†’ .env`). | Confirmed git exclusion via `git check-ignore`, sanitized default keys in templates, and documented platform-specific copy commands. |
+| **2026-09-04** | Feature: AI Smart Expense Description Generator | Google Gemini 2.0 Flash Lite / Antigravity | Build end-to-end AI justification assistant using `@google/generative-ai` SDK, role-guarded `/api/ai/generate-description` endpoint, and responsive form integration in `VoucherForm.jsx`. | Controller `ai.controller.js`, route `ai.routes.js`, frontend API `ai.js`, and form trigger button with loading state. | Designed strict system prompt with corporate rules (no hallucinations, INR currency format, 40-80 words), attached employee role guard, ensured non-blocking graceful degradation. |
+| **2026-09-04** | UI Polish: Centered Authentication Layout | Antigravity / Gemini | Fix layout alignment where login container rendered offset on the left when wrapped in animated infinite grid canvas. | Nested flex container `<div className="min-h-screen flex flex-col items-center justify-center px-4 relative">` with `mx-auto` on card. | Verified screen centering across viewports while preserving absolute positioning of the theme toggle and interactive canvas background. |
 
 ---
 
@@ -88,4 +91,3 @@ I hereby declare that:
 *Shaswat Haldar*  
 Candidate / Full-Stack Developer  
 Prachay Securities Pvt. Ltd. Internship Assignment
-| 2026-09-04 | Feature 1: AI Description Generator | Google Gemini 2.0 Flash Lite | POST /api/ai/generate-description — generates professional expense justification from form fields | Used generated text as basis for system prompt; manually tuned rules (word count, no fabrication, INR formatting) |

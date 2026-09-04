@@ -71,6 +71,13 @@ The Employee role represents frontline staff who create and submit expense reque
   - `voucher_date` (optional) — overrides the default voucher date if provided.
 - Receive a system-generated unique voucher number in the format `EV-YYYY-XXXX` (e.g. `EV-2026-0001`), assigned atomically with row-level locking to prevent duplicates.
 
+**✨ AI-Powered Smart Expense Description Generation (Gemini AI)**
+- **Autonomous Justification Generation**: Employees can auto-generate professional, corporate-grade business justifications for expense reimbursement vouchers with a single click on the **✨ Generate** button in the voucher form.
+- **Context-Aware Synthesis**: The system sends existing form parameters (`expense_title`, `department`, `amount`, and `expense_category`) to Google Gemini (`POST /api/ai/generate-description`), formatting INR currency and constructing structured prompts adhering to strict corporate rules (concise 40–80 words, formal business English, strictly prohibits fabricated meeting details, dates, or non-provided entities).
+- **Full Human Autonomy & Override**: Employees retain complete editorial authority — the generated text populates the standard `expense_description` textarea where it remains 100% editable, refinable, or removable before saving as draft or submitting for approval.
+- **Graceful Degradation**: If the AI service is unconfigured or rate-limited, employees receive clear, non-blocking toast notifications and can proceed with standard manual entry without any hindrance to voucher creation or submission.
+- **Exclusive Role Access**: Access to `/api/ai/generate-description` is strictly role-guarded to authenticated Employees (`roleGuard('employee')`), preventing unauthorized invocation from unauthenticated sessions or other role surfaces.
+
 **Voucher — Editing (Draft Only)**
 - Edit any field on a voucher they own, **but only while it is in `draft` status**.
 - Perform partial updates — can update one or more fields without resubmitting the full payload.
@@ -115,6 +122,7 @@ The Employee role represents frontline staff who create and submit expense reque
 - **Cannot** view other users' profiles or account information.
 - **Cannot** log in if their account has been deactivated by the Director — login returns `401 Invalid email or password` (no information leakage).
 - **Cannot** access any `/api/users` endpoints.
+- **Cannot** invoke the AI description generator without the mandatory foundation fields (`expense_title`, `department`, and `amount`) — validated both client-side and server-side.
 
 ---
 
