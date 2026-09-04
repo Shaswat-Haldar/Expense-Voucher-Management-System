@@ -116,16 +116,20 @@ docker start expense_pg
 ```bash
 cd expense-voucher/backend
 
-node src/config/migrate.js   # Creates all tables
-node src/config/seed.js      # Inserts demo user accounts
+npm run migrate   # Runs 001_init.sql and 002_add_user_management.sql
+npm run seed      # Inserts demo user accounts
 ```
 
-> Migration 002_add_user_management.sql is applied automatically by the migration runner on the same command.
+> **Migrations applied:**
+> - `001_init.sql` — Creates base schemas, tables (`users`, `vouchers`), enums, and timestamp triggers.
+> - `002_add_user_management.sql` — Extends `users` table with `is_active` (soft-delete flag) and `last_login_at` (audit timestamp).
 
 Expected output:
 ```
 Running migration: 001_init.sql
 Successfully applied: 001_init.sql
+Running migration: 002_add_user_management.sql
+Successfully applied: 002_add_user_management.sql
 All migrations applied successfully.
 Database seeded successfully.
 ```
@@ -146,6 +150,17 @@ npm run dev
 cd expense-voucher/frontend
 npm run dev
 # ✅ Local: http://localhost:5173/
+```
+
+---
+
+### Step 6 — Run Tests (Optional)
+
+Backend unit and middleware test suite powered by **Vitest**:
+
+```bash
+cd expense-voucher/backend
+npm test
 ```
 
 ---
@@ -185,26 +200,27 @@ expense-voucher/
 ├── AI_USE_LOG.md                # AI attribution and model usage log
 ├── backend/
 │   ├── .env.example             # Backend environment template
-│   ├── migrations/              # Raw SQL migration files
+│   ├── migrations/              # Raw SQL migration files (001_init.sql, 002_add_user_management.sql)
 │   ├── uploads/                 # Uploaded signature images
 │   └── src/
 │       ├── config/              # db.js, env.js, migrate.js, seed.js
-│       ├── middleware/          # auth.js, errorHandler.js, upload.js, roleGuard.js
+│       ├── middleware/          # auth.js, auth.test.js, errorHandler.js, upload.js, roleGuard.js
 │       └── modules/
 │           ├── auth/            # Login, logout, /me
 │           ├── vouchers/        # CRUD, file upload, status transitions
-│           └── dashboard/       # Role-specific stats
+│           ├── dashboard/       # Role-specific stats
+│           └── users/           # Director user lifecycle management (queries, controller, routes)
 └── frontend/
     ├── .env.example             # Frontend environment template
     └── src/
-        ├── api/                 # Axios instance + per-resource API functions
+        ├── api/                 # Axios client + per-resource API modules (auth, vouchers, dashboard, users)
         ├── components/          # Shared UI (Layout, Sidebar, Header, dialogs, etc.)
         ├── context/             # AuthContext, ThemeContext
         ├── hooks/               # useDashboard, useVouchers
         ├── pages/
         │   ├── auth/            # LoginPage
         │   ├── employee/        # Dashboard, MyVouchers, CreateVoucher, EditVoucher, VoucherDetail
-        │   ├── director/        # Dashboard, PendingApprovals, AllVouchers, VoucherDetail
+        │   ├── director/        # Dashboard, PendingApprovals, AllVouchers, VoucherDetail, UserManagement, CreateUser, UserDetail, EditUserModal
         │   └── accounts/        # Dashboard, AllVouchers, VoucherDetail
         ├── router/              # AppRouter, ProtectedRoute, RoleRoute
         └── utils/               # formatters, constants, fileHelpers, cn()
@@ -216,24 +232,24 @@ expense-voucher/
 
 | Method | Endpoint | Role | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | Public | Login with email + password |
-| `POST` | `/api/auth/logout` | Auth | Clear JWT cookie |
-| `GET` | `/api/auth/me` | Auth | Get current user profile |
+| `POST` | `/api/auth/login` | Public | Login with email + password (checks `is_active`, records `last_login_at`) |
+| `POST` | `/api/auth/logout` | Auth | Clear JWT HTTP-only cookie |
+| `GET` | `/api/auth/me` | Auth | Get authenticated user profile |
 | `GET` | `/api/vouchers` | Auth | List vouchers (role-filtered) |
 | `POST` | `/api/vouchers` | Employee | Create draft voucher |
-| `PATCH` | `/api/vouchers/:id` | Employee | Update draft |
-| `DELETE` | `/api/vouchers/:id` | Employee | Delete draft |
-| `POST` | `/api/vouchers/:id/submit` | Employee | Submit for approval |
+| `PATCH` | `/api/vouchers/:id` | Employee | Update draft voucher |
+| `DELETE` | `/api/vouchers/:id` | Employee | Delete draft voucher |
+| `POST` | `/api/vouchers/:id/submit` | Employee | Submit draft for director approval |
 | `POST` | `/api/vouchers/:id/approve` | Director | Approve voucher |
-| `POST` | `/api/vouchers/:id/reject` | Director | Reject with reason |
+| `POST` | `/api/vouchers/:id/reject` | Director | Reject voucher with reason |
 | `POST` | `/api/vouchers/:id/signature/:role` | Auth | Upload signature image |
-| `GET` | `/api/dashboard` | Auth | Role-specific dashboard stats |
-| `GET` | `/api/users` | Director | List users |
-| `POST` | `/api/users` | Director | Create user |
-| `GET` | `/api/users/:id` | Director | Get user detail |
-| `PATCH` | `/api/users/:id` | Director | Update user |
-| `PATCH` | `/api/users/:id/toggle-active` | Director | Activate/Deactivate |
-| `GET` | `/api/users/stats` | Director | User stats |
+| `GET` | `/api/dashboard` | Auth | Role-specific dashboard metrics |
+| `GET` | `/api/users` | Director | List users with search, role, & status filters |
+| `POST` | `/api/users` | Director | Create new employee or accounts team member |
+| `GET` | `/api/users/stats` | Director | Summary statistics (total, active, roles count) |
+| `GET` | `/api/users/:id` | Director | Get user details and voucher history |
+| `PATCH` | `/api/users/:id` | Director | Update user profile (name, role, employee ID) |
+| `PATCH` | `/api/users/:id/toggle-active` | Director | Activate or deactivate user (self-deactivation blocked) |
 
 ---
 
@@ -241,12 +257,15 @@ expense-voucher/
 
 | Issue | Fix |
 |---|---|
-| PostgreSQL not installed locally | Switched to Docker PostgreSQL container |
+| PostgreSQL not installed locally | Switched to Docker PostgreSQL container (`postgres:16-alpine`) |
 | Environment credentials disclosure risk | Enforced `.env.example` pattern: ignored real `.env` in `.gitignore`, provided sanitized templates and copy instructions |
 | Missing `useState`/`useEffect` imports in director page | Added to React import, blank page crash resolved |
 | Images showing 404 (wrong URL base) | Stripped `/api` suffix from `VITE_API_BASE_URL` before building upload paths; added `/api/uploads` static route on backend |
 | `res.data.data` undefined crash on voucher lists | Added safe array unwrapping with fallback to `[]` |
 | Reject dialog transparent / unreadable | Replaced transparent dialog with opaque `bg-white dark:bg-slate-900` |
+| `column "is_active" does not exist` on login | Executed `npm run migrate` to apply migration `002_add_user_management.sql` to database |
+| `ReferenceError: jest is not defined` in `auth.test.js` | Updated test mocks to use native Vitest (`vi.fn()`, `vi.mock()`) and verify `env.JWT_SECRET` |
+| Director self-deactivation & privilege escalation | Added server-side validation in `users.controller.js` preventing directors from altering their own active state or provisioning duplicate director roles |
 
 ---
 
