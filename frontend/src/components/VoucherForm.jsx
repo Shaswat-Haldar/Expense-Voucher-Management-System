@@ -6,6 +6,8 @@ import { Button } from './ui/button';
 import SignatureUpload from './SignatureUpload';
 import { cn } from '../utils';
 import { AlertCircle, Send, Save } from 'lucide-react';
+import { generateExpenseDescription } from '../api/ai';
+import { toast } from 'sonner';
 
 const voucherSchema = z.object({
   department: z.string().min(1, 'Department is required'),
@@ -19,8 +21,9 @@ const voucherSchema = z.object({
 const VoucherForm = ({ initialData, onSubmitDraft, onSubmitFinal, loading }) => {
   const [signatureFile, setSignatureFile] = useState(null);
   const [shake, setShake] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors }, getValues, setValue } = useForm({
     resolver: zodResolver(voucherSchema),
     defaultValues: {
       department: initialData?.department || '',
@@ -43,6 +46,38 @@ const VoucherForm = ({ initialData, onSubmitDraft, onSubmitFinal, loading }) => 
       return;
     }
     onSubmitFinal(data, signatureFile);
+  };
+
+  const handleGenerateDescription = async () => {
+    const values = getValues();
+    const { expense_title, expense_category, department, amount } = values;
+
+    if (!expense_title || !department || !amount) {
+      toast.error('Fill in Title, Department, and Amount first.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const res = await generateExpenseDescription({
+        expense_title,
+        expense_category,
+        department,
+        amount: Number(amount)
+      });
+      const generated = res.data?.data?.description;
+      if (generated) {
+        setValue('expense_description', generated);
+        toast.success('Description generated!');
+      }
+    } catch (err) {
+      toast.error(
+        err.response?.data?.error?.message ||
+        'Could not generate description. Please write manually.'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const inputClasses = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-lt)] dark:focus:ring-sky-500 transition";
@@ -119,9 +154,51 @@ const VoucherForm = ({ initialData, onSubmitDraft, onSubmitFinal, loading }) => 
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Description / Justification
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-0">
+                Description / Justification
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={isGenerating}
+                className="
+                  flex items-center gap-1.5 px-3 py-1 rounded-md text-xs
+                  font-medium transition-all duration-200
+                  bg-blue-50 text-blue-600 border border-blue-200
+                  hover:bg-blue-100 hover:border-blue-300
+                  dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800
+                  dark:hover:bg-blue-900
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
+              >
+                {isGenerating ? (
+                  <>
+                    <svg
+                      className="w-3 h-3 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12" cy="12" r="10"
+                        stroke="currentColor" strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
+                    </svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    ✨ Generate
+                  </>
+                )}
+              </button>
+            </div>
             <textarea 
               {...register('expense_description')} 
               rows="3" 

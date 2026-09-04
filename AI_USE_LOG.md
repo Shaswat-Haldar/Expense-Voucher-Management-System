@@ -88,3 +88,4 @@ I hereby declare that:
 *Shaswat Haldar*  
 Candidate / Full-Stack Developer  
 Prachay Securities Pvt. Ltd. Internship Assignment
+| 2026-09-04 | Feature 1: AI Description Generator | Google Gemini 2.0 Flash Lite | POST /api/ai/generate-description — generates professional expense justification from form fields | Used generated text as basis for system prompt; manually tuned rules (word count, no fabrication, INR formatting) |

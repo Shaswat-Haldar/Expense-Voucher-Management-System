@@ -12,6 +12,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import voucherRoutes from './modules/vouchers/voucher.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
+import aiRoutes from './modules/ai/ai.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +53,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use((req, res) => {

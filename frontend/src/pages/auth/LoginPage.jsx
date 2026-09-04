@@ -45,17 +45,18 @@ const LoginPage = () => {
   };
 
   return (
-    <AnimatedGridBackground className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-page)] px-4 transition-colors">
-      {/* Theme Toggle in top right */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-6 right-6 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-      >
-        {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
-      </button>
+    <AnimatedGridBackground className="bg-[var(--bg-page)] transition-colors">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 relative">
+        {/* Theme Toggle in top right */}
+        <button
+          onClick={toggleTheme}
+          className="absolute top-6 right-6 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+        </button>
 
-      <div className="max-w-md w-full bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 transition-colors">
+        <div className="max-w-md w-full mx-auto bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 transition-colors">
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-2xl bg-[var(--color-primary)] dark:bg-sky-500 text-white dark:text-slate-950 font-extrabold text-xl flex items-center justify-center mx-auto mb-4 shadow-md">
             ABC
@@ -139,6 +140,7 @@ const LoginPage = () => {
               Accounts
             </button>
           </div>
+        </div>
         </div>
       </div>
     </AnimatedGridBackground>

@@ -17,6 +17,7 @@
 | 🖨️ Print Vouchers | Print-ready layout for approved vouchers |
 | 🌙 Dark Mode | Persistent dark / light mode toggle with system preference detection |
 | 🔒 Secure Auth | JWT via HTTP-only cookies, no tokens exposed to JavaScript |
+| ✨ AI Description Generator | Employees can auto-generate professional expense justifications using Gemini AI directly from the voucher form |
 
 ---
 
@@ -29,6 +30,7 @@
 | **Backend** | Node.js, Express.js, JWT (HTTP-only cookies) |
 | **Database** | PostgreSQL 16 (via Docker) — raw SQL migrations |
 | **File Uploads** | Multer (signature images) |
+| **AI** | Google Gemini 2.0 Flash Lite (via @google/generative-ai) |
 | **Dev Tools** | Nodemon, Docker Desktop |
 
 ---
@@ -320,6 +322,10 @@ JWT_EXPIRES_IN=8h
 UPLOAD_DIR=./uploads
 MAX_FILE_SIZE_MB=5
 ALLOWED_ORIGINS=http://localhost:5173
+
+# ─── AI (Google Gemini) ───────────────────────────────────
+# Get your free API key at https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 **`frontend/.env.example`**
@@ -490,6 +496,7 @@ expense-voucher/
 | `GET` | `/api/users/:id` | Director | Get user details and voucher history |
 | `PATCH` | `/api/users/:id` | Director | Update user profile (name, role, employee ID) |
 | `PATCH` | `/api/users/:id/toggle-active` | Director | Activate or deactivate user (self-deactivation blocked) |
+| `POST` | `/api/ai/generate-description` | Employee | Generate AI expense description from voucher fields |
 
 ---
 
@@ -506,6 +513,37 @@ expense-voucher/
 | `column "is_active" does not exist` on login | Executed `npm run migrate` to apply migration `002_add_user_management.sql` to database |
 | `ReferenceError: jest is not defined` in `auth.test.js` | Updated test mocks to use native Vitest (`vi.fn()`, `vi.mock()`) and verify `env.JWT_SECRET` |
 | Director self-deactivation & privilege escalation | Added server-side validation in `users.controller.js` preventing directors from altering their own active state or provisioning duplicate director roles |
+
+---
+
+## ✨ AI Features
+
+### Smart Description Generator
+
+Employees filling out the voucher form can click the
+**✨ Generate** button next to the Description field.
+The system sends the voucher's Title, Category, Department,
+and Amount to Google Gemini 2.0 Flash Lite and returns a
+professional 2–3 sentence business justification in under
+2 seconds.
+
+**How to enable:**
+1. Get a free API key at https://aistudio.google.com/app/apikey
+2. Add it to `backend/.env`:
+   GEMINI_API_KEY=your_key_here
+3. Restart the backend server
+
+**Graceful degradation:**
+If the API key is missing or the Gemini API is unreachable,
+the button shows an error toast and the description field
+remains editable manually. The rest of the application is
+completely unaffected.
+
+**Free tier limits (Gemini 2.0 Flash Lite):**
+- 1,500 requests/day
+- 1M input tokens/day
+- 250K output tokens/day
+Sufficient for demo and real-world internship usage.
 
 ---
 
