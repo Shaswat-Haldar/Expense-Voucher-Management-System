@@ -32,7 +32,7 @@
 | **Backend** | Node.js, Express.js, JWT (HTTP-only cookies) |
 | **Database** | PostgreSQL 16 (via Docker) — raw SQL migrations |
 | **File Uploads** | Multer (signature images) |
-| **AI** | Google Gemini 2.0 Flash Lite (via @google/generative-ai) |
+| **AI** | Google Gemini 3.5 Flash Lite (via @google/generative-ai) |
 | **Dev Tools** | Nodemon, Docker Desktop |
 
 ---
