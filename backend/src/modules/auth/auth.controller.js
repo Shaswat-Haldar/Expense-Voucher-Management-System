@@ -34,10 +34,12 @@ export const login = async (req, res, next) => {
       expiresIn: env.JWT_EXPIRES_IN
     });
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
       maxAge: 8 * 60 * 60 * 1000 // 8 hours (approx matching 8h string)
     });
 
@@ -61,7 +63,12 @@ export const login = async (req, res, next) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie('token');
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProduction
+  });
   res.status(200).json({ success: true });
 };
 
