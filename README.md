@@ -33,6 +33,246 @@
 
 ---
 
+## 👥 Role Permissions — Detailed Reference
+
+> This section documents exactly what each role **can** and **cannot** do, derived from the live backend enforcement logic. All restrictions are applied server-side and cannot be bypassed from the frontend.
+
+---
+
+### 👤 Employee
+
+The Employee role represents frontline staff who create and submit expense requests for reimbursement or approval.
+
+#### ✅ What an Employee CAN do
+
+**Authentication & Account**
+- Log in using their registered email and password.
+- Log out at any time, which clears the HTTP-only JWT cookie.
+- View their own profile via `/api/auth/me` (returns `id`, `role`, `name`, `email`).
+- Their `last_login_at` timestamp is automatically recorded on every successful login.
+
+**Dashboard**
+- View a personalised dashboard showing metrics scoped exclusively to their own vouchers:
+  - Total number of vouchers created.
+  - Count broken down by status: `draft`, `pending_approval`, `approved`, `rejected`.
+  - Total cumulative monetary amount across all submitted vouchers.
+
+**Voucher — Creation**
+- Create new expense vouchers in `draft` status.
+- Fill in the following fields when creating a voucher:
+  - `expense_title` (required, min 1 character) — a short label for the expense.
+  - `department` (required) — the business unit the expense belongs to.
+  - `expense_date` (required) — the actual date the expense occurred.
+  - `amount` (required, must be a positive number) — the monetary value of the claim.
+  - `expense_description` (optional) — free-text notes about the expense.
+  - `expense_category` (optional, defaults to `"General"`) — e.g. Travel, Meals, Office Supplies.
+  - `voucher_date` (optional) — overrides the default voucher date if provided.
+- Receive a system-generated unique voucher number in the format `EV-YYYY-XXXX` (e.g. `EV-2026-0001`), assigned atomically with row-level locking to prevent duplicates.
+
+**Voucher — Editing (Draft Only)**
+- Edit any field on a voucher they own, **but only while it is in `draft` status**.
+- Perform partial updates — can update one or more fields without resubmitting the full payload.
+- Cannot edit vouchers belonging to other employees.
+
+**Voucher — Deleting (Draft Only)**
+- Permanently delete a voucher they own, **but only while it is in `draft` status**.
+- Deleting a draft also removes any associated signature image file from disk.
+- Cannot delete vouchers once they have been submitted.
+
+**Voucher — Signature Upload**
+- Upload their own handwritten signature image to a draft or pre-submission voucher.
+  - Accepted file formats: **PNG, JPEG, WEBP** only.
+  - Maximum file size: **5 MB**.
+  - Each upload replaces any previously uploaded signature for that voucher.
+- Cannot upload a director's signature.
+
+**Voucher — Submission**
+- Submit a `draft` voucher for director approval, transitioning its status to `pending_approval`.
+- **Signature is mandatory** before submission — the system rejects submission attempts without a valid `employee_sig_path`.
+- Can only submit their own vouchers.
+- Cannot re-submit a voucher that has already been submitted, approved, or rejected.
+
+**Voucher — Viewing**
+- View a list of their own vouchers only (backend enforces `WHERE employee_id = <their id>`).
+- Filter their own voucher list by: `status`, `department`, `expense_category`, `date range`, `amount range`, `voucher_number`.
+- Sort results by: `created_at`, `expense_date`, `amount`, `status`, `voucher_number`.
+- View paginated results (up to 20 per page by default).
+- View full details of any single voucher they own.
+- View their voucher's full audit trail: submission timestamp, approval/rejection timestamp, rejection reason (if any), director's signature.
+
+#### ❌ What an Employee CANNOT do
+
+- **Cannot** view, edit, delete, or access vouchers belonging to other employees — the server returns `403 Forbidden`.
+- **Cannot** approve or reject any voucher, including their own.
+- **Cannot** upload a director signature.
+- **Cannot** edit a voucher once it has been submitted (status `pending_approval`, `approved`, or `rejected`).
+- **Cannot** delete a submitted, approved, or rejected voucher.
+- **Cannot** change their own account details (name, email, password, role) — there is no self-edit endpoint for employees.
+- **Cannot** access the Director dashboard or Accounts dashboard.
+- **Cannot** access the User Management panel.
+- **Cannot** view other users' profiles or account information.
+- **Cannot** log in if their account has been deactivated by the Director — login returns `401 Invalid email or password` (no information leakage).
+- **Cannot** access any `/api/users` endpoints.
+
+---
+
+### 🎯 Director
+
+The Director role has full voucher governance authority and complete control over the user roster of the organisation. This is the most privileged role in the system.
+
+#### ✅ What a Director CAN do
+
+**Authentication & Account**
+- Log in using their registered email and password.
+- Log out at any time.
+- View their own profile via `/api/auth/me`.
+- `last_login_at` is updated automatically on every login.
+
+**Dashboard**
+- View a Director-specific dashboard showing:
+  - Number of vouchers currently in `pending_approval` status (awaiting their action).
+  - Number of vouchers approved today.
+  - Number of vouchers rejected today.
+  - Total monetary value of all pending vouchers (aggregate sum).
+  - A live feed of the **10 most recently updated vouchers** across all employees (excludes pure drafts).
+
+**Voucher — Viewing (All Vouchers)**
+- View **all** vouchers from all employees across the organisation — no employee scoping is applied to Directors.
+- Apply multi-dimensional filters: `status`, `department`, `expense_category`, `employee_name`, `voucher_number`, `date_from`, `date_to`, `amount_min`, `amount_max`.
+- Sort results by: `created_at`, `expense_date`, `amount`, `status`, `voucher_number` in either direction.
+- View full details of any single voucher.
+- See submitted timestamps, employee signatures, director signatures, approval/rejection timestamps, and rejection reasons.
+
+**Voucher — Signature Upload**
+- Upload their own handwritten director signature to any voucher at any time.
+  - Accepted formats: **PNG, JPEG, WEBP** only.
+  - Maximum file size: **5 MB**.
+  - The system records `director_id` when a director signature is uploaded.
+- Director signature is **required** before a voucher can be approved.
+
+**Voucher — Approval**
+- Approve a `pending_approval` voucher, transitioning it to `approved` status.
+- **Director signature (`director_sig_path`) is mandatory** before approval — the server enforces this and returns `400 Bad Request` if the signature is absent.
+- Records `approved_at` timestamp and stamps `director_id` on the voucher.
+
+**Voucher — Rejection**
+- Reject a `pending_approval` voucher, transitioning it to `rejected` status.
+- A `rejection_reason` (minimum 10 characters) is **required** — the server validates this with Zod and returns `400` if it is missing or too short.
+- Records `rejected_at` timestamp, `rejection_reason`, and stamps `director_id`.
+- Unlike approval, rejection does **not** require a director signature.
+
+**User Management — Listing & Filtering**
+- View a paginated list of all registered users in the system (10 per page by default).
+- Filter users by:
+  - Free-text search across `name` and `email` (case-insensitive, partial match).
+  - `role` filter: `employee` or `accounts`.
+  - `is_active` filter: `true` (active only) or `false` (deactivated only).
+- View returned user fields: `id`, `name`, `email`, `role`, `employee_id`, `is_active`, `last_login_at`, `created_at`.
+- Note: `password_hash` is **never** returned by the API — it is excluded at the query level.
+
+**User Management — Stats Dashboard**
+- Fetch an aggregate summary of all user accounts:
+  - Total user count.
+  - Count of active vs. inactive users.
+  - Count by role: `employee`, `director`, `accounts`.
+
+**User Management — User Detail**
+- View the full profile of any individual user by their `id`.
+
+**User Management — User Creation**
+- Create new user accounts for **Employee** or **Accounts** roles only.
+- Required fields: `name` (min 2 chars), `email` (valid format), `role` (`employee` or `accounts`).
+- Optional: `employee_id` (only meaningful for `employee` role; stored as `null` for `accounts`).
+- Password: can be provided explicitly, or the system auto-generates a cryptographically random temporary password (16-char hex + complexity suffix).
+- The temporary password is returned in the API response once (only at creation time) so it can be shared with the new user.
+- New accounts are always created as `is_active = true`.
+- If a duplicate email is attempted, the server returns `409 Conflict`.
+
+**User Management — Edit User**
+- Update an existing user's `name`, `role`, or `employee_id`.
+- Changing a user's role between `employee` and `accounts` is permitted.
+- Does **not** change or expose password hashes.
+
+**User Management — Activate / Deactivate User**
+- Toggle any user's `is_active` status to `true` (active) or `false` (deactivated).
+- A deactivated user **immediately** loses the ability to log in — login queries filter by `is_active = true`, so deactivated accounts return `401 Invalid email or password`.
+- The `is_active` value must be an explicit boolean; the server returns `400` for any other type.
+
+#### ❌ What a Director CANNOT do
+
+- **Cannot** deactivate their own account — `PATCH /api/users/:id/toggle-active` returns `403 Forbidden` if `req.user.id === req.params.id`.
+- **Cannot** change their own role via the user update endpoint — server returns `403 Forbidden`.
+- **Cannot** create other Director-level accounts — the create user endpoint validates `role` and only accepts `employee` or `accounts`; attempting `director` returns `400 Bad Request`.
+- **Cannot** approve a voucher that is not in `pending_approval` status — returns `422 Unprocessable Entity`.
+- **Cannot** approve without their signature being uploaded first — returns `400 Bad Request`.
+- **Cannot** reject a voucher that is not in `pending_approval` status — returns `422`.
+- **Cannot** reject without providing a rejection reason of at least 10 characters — returns `400` with Zod validation details.
+- **Cannot** create vouchers themselves — the `POST /api/vouchers` route is guarded with `roleGuard('employee')` and returns `403` for Directors.
+- **Cannot** edit or delete employee vouchers — edit/delete routes are guarded with `roleGuard('employee')`.
+- **Cannot** change passwords of any user through the User Management panel (no password update endpoint exists).
+- **Cannot** delete user accounts — only deactivation (soft-delete) is supported.
+
+---
+
+### 🧾 Accounts
+
+The Accounts role is a read-only audit and finance team role. They can inspect all submitted vouchers in detail for reconciliation and reporting but have no write authority over the voucher lifecycle.
+
+#### ✅ What an Accounts User CAN do
+
+**Authentication & Account**
+- Log in using their registered email and password.
+- Log out at any time.
+- View their own profile via `/api/auth/me`.
+- `last_login_at` is automatically recorded on every successful login.
+
+**Dashboard**
+- View an Accounts-specific dashboard showing metrics across the **entire organisation** (excluding drafts):
+  - Total non-draft vouchers in the system.
+  - Count of vouchers in `pending_approval` status.
+  - Count of `approved` vouchers.
+  - Count of `rejected` vouchers.
+  - Total cumulative monetary value of all **approved** vouchers (finance reconciliation metric).
+  - A live feed of the **10 most recently approved vouchers**.
+
+**Voucher — Viewing (All Non-Draft Vouchers)**
+- View all vouchers from all employees that have been submitted (i.e. not pure drafts).
+- Apply multi-dimensional filters for reconciliation:
+  - `status` — e.g. filter to `approved` only for payment processing.
+  - `department` — partial match, case-insensitive.
+  - `expense_category` — exact match.
+  - `employee_name` — partial match, case-insensitive.
+  - `voucher_number` — partial match for quick lookup.
+  - `date_from` / `date_to` — expense date range.
+  - `amount_min` / `amount_max` — monetary range filter.
+- Sort results by: `created_at`, `expense_date`, `amount`, `status`, `voucher_number`.
+- View paginated results (up to 20 per page).
+- View full detail of any single voucher, including:
+  - All voucher fields (department, category, description, amount, dates).
+  - Employee name and employee ID.
+  - Voucher status and all status timestamps (submitted, approved, rejected).
+  - Rejection reason (if any).
+  - Employee signature image path.
+  - Director signature image path and `director_id`.
+
+**Print-Ready Vouchers**
+- Access a print-optimised layout for approved vouchers including company letterhead, voucher details, and dual signature fields for physical record-keeping.
+
+#### ❌ What an Accounts User CANNOT do
+
+- **Cannot** create, edit, or delete any voucher — these routes are guarded with `roleGuard('employee')`.
+- **Cannot** approve or reject any voucher — these routes are guarded with `roleGuard('director')`.
+- **Cannot** upload employee or director signatures — both signature upload routes are role-guarded.
+- **Cannot** submit vouchers — submission is `roleGuard('employee')` only.
+- **Cannot** view pure draft vouchers — the Accounts dashboard query explicitly excludes `WHERE status != 'draft'`.
+- **Cannot** access any `/api/users` User Management endpoints — all are guarded with `roleGuard('director')`.
+- **Cannot** create, edit, activate, or deactivate any user accounts.
+- **Cannot** access the Director or Employee dashboards.
+- **Cannot** change their own account details (name, email, password, role).
+- **Cannot** log in if their account has been deactivated by the Director — returns `401 Invalid email or password`.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
