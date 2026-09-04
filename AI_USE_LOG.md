@@ -27,7 +27,7 @@ In accordance with academic and technical assessment integrity guidelines, this 
 |---|---|---|
 | **Claude 3.5 Sonnet** | Anthropic | Architecture planning, state machine logic, frontend component drafting, complex debugging |
 | **Gemini 1.5 Pro / Flash** | Google DeepMind | PostgreSQL schema design, Zod validation schemas, API route design, SQL aggregation |
-| **Gemini 2.0 Flash Lite** | Google DeepMind | Smart expense description generator, corporate justification prompt engineering |
+| **Gemini 3.5 Flash Lite** | Google DeepMind | Smart expense description generator, corporate justification prompt engineering |
 | **GPT-4o** | OpenAI | Filter logic, role-based dashboard metrics, error diagnosis |
 | **GitHub Copilot / IDE Assistant** | GitHub / DeepMind | Context-aware code completions, boilerplate generation, unit test scaffolding |
 
