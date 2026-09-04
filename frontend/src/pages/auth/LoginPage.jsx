@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Moon, Sun, Lock, Mail, ArrowRight } from 'lucide-react';
+import { AnimatedGridBackground } from '../../components/InfiniteGrid';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,7 +45,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-page)] px-4 relative transition-colors">
+    <AnimatedGridBackground className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-page)] px-4 transition-colors">
       {/* Theme Toggle in top right */}
       <button
         onClick={toggleTheme}
@@ -140,7 +141,7 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AnimatedGridBackground>
   );
 };
 

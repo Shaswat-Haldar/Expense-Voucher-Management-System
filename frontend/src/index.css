@@ -40,21 +40,21 @@
 }
 
 .dark {
-  --bg-page: #0B1120;
-  --bg-surface: #1E293B;
-  --bg-surface-elevated: #283548;
-  --bg-subtle: #1E293B;
+  --bg-page: #09090B;
+  --bg-surface: #111115;
+  --bg-surface-elevated: #18181C;
+  --bg-subtle: #111115;
   --border-color: #334155;
   --border-subtle: #475569;
   --text-main: #F8FAFC;
   --text-muted: #94A3B8;
   --text-faint: #64748B;
 
-  --background: #1E293B;
+  --background: #09090B;
   --foreground: #F8FAFC;
-  --card: #1E293B;
+  --card: #111115;
   --card-foreground: #F8FAFC;
-  --popover: #1E293B;
+  --popover: #111115;
   --popover-foreground: #F8FAFC;
   --muted: #334155;
   --muted-foreground: #94A3B8;
