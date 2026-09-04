@@ -63,25 +63,32 @@ npm install
 
 ### Step 2 — Environment Variables
 
-Pre-configured `.env` files are included. No changes needed for local dev.
+Copy the example files and fill in your values:
 
-**`backend/.env`**
-```env
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+**`backend/.env.example`**
+```bash
 PORT=4000
-DATABASE_URL=postgresql://postgres:password@localhost:5432/expense_voucher
-JWT_SECRET=change_me_in_production
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/expense_voucher
+JWT_SECRET=your_jwt_secret_key_here
 JWT_EXPIRES_IN=8h
 UPLOAD_DIR=./uploads
 MAX_FILE_SIZE_MB=5
 ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-**`frontend/.env`**
-```env
+**`frontend/.env.example`**
+```bash
 VITE_API_BASE_URL=http://localhost:4000/api
 ```
 
-> ⚠️ **Production**: Change `JWT_SECRET` and `DATABASE_URL` before deploying.
+> ⚠️ **Never commit your actual `.env` files.** They are listed in `.gitignore`.  
+> ⚠️ **Production:** Replace `JWT_SECRET` with a cryptographically random string and update `DATABASE_URL` and `ALLOWED_ORIGINS` accordingly.
+
 
 ---
 
@@ -169,7 +176,10 @@ npm run dev
 
 ```
 expense-voucher/
+├── .env.example                 # Root environment template
+├── AI_USE_LOG.md                # AI attribution and model usage log
 ├── backend/
+│   ├── .env.example             # Backend environment template
 │   ├── migrations/              # Raw SQL migration files
 │   ├── uploads/                 # Uploaded signature images
 │   └── src/
@@ -180,6 +190,7 @@ expense-voucher/
 │           ├── vouchers/        # CRUD, file upload, status transitions
 │           └── dashboard/       # Role-specific stats
 └── frontend/
+    ├── .env.example             # Frontend environment template
     └── src/
         ├── api/                 # Axios instance + per-resource API functions
         ├── components/          # Shared UI (Layout, Sidebar, Header, dialogs, etc.)
@@ -220,6 +231,7 @@ expense-voucher/
 | Issue | Fix |
 |---|---|
 | PostgreSQL not installed locally | Switched to Docker PostgreSQL container |
+| Environment credentials disclosure risk | Enforced `.env.example` pattern: ignored real `.env` in `.gitignore`, provided sanitized templates and copy instructions |
 | Missing `useState`/`useEffect` imports in director page | Added to React import, blank page crash resolved |
 | Images showing 404 (wrong URL base) | Stripped `/api` suffix from `VITE_API_BASE_URL` before building upload paths; added `/api/uploads` static route on backend |
 | `res.data.data` undefined crash on voucher lists | Added safe array unwrapping with fallback to `[]` |
