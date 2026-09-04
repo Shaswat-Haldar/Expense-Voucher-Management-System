@@ -5,10 +5,23 @@ const api = axios.create({
   withCredentials: true
 });
 
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       // If unauthorized, redirect to login unless we are already on login
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';

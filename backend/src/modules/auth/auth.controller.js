@@ -48,6 +48,7 @@ export const login = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
+        token,
         role: user.role,
         name: user.name
       }

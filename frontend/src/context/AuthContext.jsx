@@ -26,13 +26,19 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const response = await apiLogin(email, password);
     if (response.success) {
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
       setUser(response.data);
     }
     return response;
   };
 
   const logout = async () => {
-    await apiLogout();
+    try {
+      await apiLogout();
+    } catch (_) {}
+    localStorage.removeItem('token');
     setUser(null);
   };
 
