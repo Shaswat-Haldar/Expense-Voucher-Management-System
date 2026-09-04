@@ -15,6 +15,9 @@ import DirectorDashboard from '../pages/director/DirectorDashboard';
 import PendingApprovals from '../pages/director/PendingApprovals';
 import DirectorAllVouchers from '../pages/director/AllVouchers';
 import DirectorVoucherDetail from '../pages/director/VoucherDetail';
+import UserManagement from '../pages/director/UserManagement';
+import CreateUser from '../pages/director/CreateUser';
+import UserDetail from '../pages/director/UserDetail';
 import AccountsDashboard from '../pages/accounts/AccountsDashboard';
 import AccountsAllVouchers from '../pages/accounts/AllVouchers';
 import AccountsVoucherDetail from '../pages/accounts/VoucherDetail';
@@ -52,6 +55,9 @@ const AppRouter = () => {
                       <Route path="approvals" element={<PendingApprovals />} />
                       <Route path="vouchers" element={<DirectorAllVouchers />} />
                       <Route path="vouchers/:id" element={<DirectorVoucherDetail />} />
+                      <Route path="users" element={<UserManagement />} />
+                      <Route path="users/new" element={<CreateUser />} />
+                      <Route path="users/:id" element={<UserDetail />} />
                       <Route path="*" element={<Navigate to="dashboard" replace />} />
                     </Routes>
                   </RoleRoute>

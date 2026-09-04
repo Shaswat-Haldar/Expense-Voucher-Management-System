@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LayoutDashboard, FileText, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, FileText, CheckSquare, Users } from 'lucide-react';
 import { cn } from '../utils/index';
 
 const Sidebar = () => {
@@ -19,6 +19,7 @@ const Sidebar = () => {
           { name: 'Dashboard', path: '/director/dashboard', icon: LayoutDashboard },
           { name: 'Pending Approvals', path: '/director/approvals', icon: CheckSquare },
           { name: 'All Vouchers', path: '/director/vouchers', icon: FileText },
+          { name: 'User Management', path: '/director/users', icon: Users },
         ];
       case 'accounts':
         return [

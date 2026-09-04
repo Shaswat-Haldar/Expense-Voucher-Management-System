@@ -1,7 +1,9 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { auth } from './auth.js';
+import { env } from '../config/env.js';
 import jwt from 'jsonwebtoken';
 
-jest.mock('jsonwebtoken');
+vi.mock('jsonwebtoken');
 
 describe('Auth Middleware', () => {
   let mockReq;
@@ -13,11 +15,10 @@ describe('Auth Middleware', () => {
       cookies: {}
     };
     mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
     };
-    mockNext = jest.fn();
-    process.env.JWT_SECRET = 'test_secret';
+    mockNext = vi.fn();
   });
 
   it('should return 401 if no token is provided', () => {
@@ -35,7 +36,7 @@ describe('Auth Middleware', () => {
 
     auth(mockReq, mockRes, mockNext);
 
-    expect(jwt.verify).toHaveBeenCalledWith('valid_token', 'test_secret');
+    expect(jwt.verify).toHaveBeenCalledWith('valid_token', env.JWT_SECRET);
     expect(mockReq.user).toEqual(decodedPayload);
     expect(mockNext).toHaveBeenCalled();
   });

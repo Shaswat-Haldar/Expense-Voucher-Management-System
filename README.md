@@ -9,6 +9,7 @@
 | Feature | Description |
 |---|---|
 | 🔐 Role-Based Access | Employee, Director, and Accounts roles with strictly scoped permissions |
+| 👤 User Management | Director can create, edit, and deactivate employee and accounts team members |
 | 📄 Voucher Lifecycle | `Draft → Pending Approval → Approved / Rejected` state machine |
 | ✍️ Digital Signatures | Upload JPG / PNG / WEBP signature images (max 5 MB) |
 | 📊 Role Dashboards | Custom stats and recent activity per role |
@@ -119,6 +120,8 @@ node src/config/migrate.js   # Creates all tables
 node src/config/seed.js      # Inserts demo user accounts
 ```
 
+> Migration 002_add_user_management.sql is applied automatically by the migration runner on the same command.
+
 Expected output:
 ```
 Running migration: 001_init.sql
@@ -169,6 +172,8 @@ npm run dev
 | Accounts | `accounts@demo.com` | `Accounts@123` |
 
 > 💡 **Tip**: On the Login page, click the **Employee / Director / Accounts** quick-fill buttons to auto-populate credentials instantly.
+
+> 💡 **Log in as Director** to access User Management via the sidebar.
 
 ---
 
@@ -223,6 +228,12 @@ expense-voucher/
 | `POST` | `/api/vouchers/:id/reject` | Director | Reject with reason |
 | `POST` | `/api/vouchers/:id/signature/:role` | Auth | Upload signature image |
 | `GET` | `/api/dashboard` | Auth | Role-specific dashboard stats |
+| `GET` | `/api/users` | Director | List users |
+| `POST` | `/api/users` | Director | Create user |
+| `GET` | `/api/users/:id` | Director | Get user detail |
+| `PATCH` | `/api/users/:id` | Director | Update user |
+| `PATCH` | `/api/users/:id/toggle-active` | Director | Activate/Deactivate |
+| `GET` | `/api/users/stats` | Director | User stats |
 
 ---
 

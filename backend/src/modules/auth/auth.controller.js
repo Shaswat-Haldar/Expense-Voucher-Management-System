@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { getClient } from '../../config/db.js';
 import { env } from '../../config/env.js';
 import { loginSchema } from './auth.validation.js';
+import { updateLastLogin } from '../users/users.queries.js';
 
 export const login = async (req, res, next) => {
   let client;
@@ -10,7 +11,7 @@ export const login = async (req, res, next) => {
     const { email, password } = loginSchema.parse(req.body);
     client = await getClient();
 
-    const { rows } = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    const { rows } = await client.query('SELECT * FROM users WHERE email = $1 AND is_active = true', [email]);
     const user = rows[0];
 
     if (!user) {
@@ -39,6 +40,8 @@ export const login = async (req, res, next) => {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 8 * 60 * 60 * 1000 // 8 hours (approx matching 8h string)
     });
+
+    try { await updateLastLogin(user.id); } catch (_) {}
 
     res.status(200).json({
       success: true,
